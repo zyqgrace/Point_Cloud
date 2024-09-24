@@ -1,21 +1,23 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import sample_and_group 
+from PCT.utils import sample_and_group 
 
 
 class Encoder_Layer(nn.Module):
-    def __init__(self, args, output_channels = 40):
+    def __init__(self, args, channels=256):
         super(Encoder_Layer,self).__init__()
         self.args = args 
-        self.conv1 = nn.Conv1d(3,64, kernel_size = 1, bias = False)
-        self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(64)
-        self.SA1 = Self_Attention_Layer(x)
-        self.SA2 = Self_Attention_Layer(self.SA1)
-        self.SA3 = Self_Attention_Layer(self.SA2)
-        self.SA4 = Self_Attention_Layer(self.SA3)
+        self.conv1 = nn.Conv1d(channels, channels, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(channels, channels, kernel_size=1, bias=False)
+        
+        self.bn1 = nn.BatchNorm1d(channels)
+        self.bn2 = nn.BatchNorm1d(channels)
+        
+        self.SA1 = Self_Attention_Layer(channels)
+        self.SA2 = Self_Attention_Layer(channels)
+        self.SA3 = Self_Attention_Layer(channels)
+        self.SA4 = Self_Attention_Layer(channels)
 
     def forward(self,x):
         # b, 3, npoint, nsample 
@@ -27,52 +29,12 @@ class Encoder_Layer(nn.Module):
         # B, D, N
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
-        x1 = self.sa1(x)
-        x2 = self.sa2(x1)
-        x3 = self.sa2(x2)
-        x4 = self.sa2(x3)
+        x1 = self.SA1(x)
+        x2 = self.SA2(x1)
+        x3 = self.SA2(x2)
+        x4 = self.SA2(x3)
         x = torch.cat((x1, x2, x3, x4), dim = 1)
         return x
-        
-        
-class Self_Attention_Layer(nn.Module):
-    def __init__(self, channels):
-        super(Self_Attention_Layer, self).__init__()
-        self.q_conv = nn.Conv1d(channels, channels //4, 1, bias = False)
-        self.k_conv = nn.Conv1d(channels, channels //4, 1, bias = False)
-        self.q_conv.weight = self.q_conv.weight
-        self.k_conv.bias = self.k_conv.bias
-        self.v_conv = nn.Conv1d(channels, channels, 1)
-        self.trans_conv = nn.Conv1d(channels, channels, 1)
-        self.after_norm = nn.BatchNorm1d(channels)
-        self.act = nn.ReLU()
-        self.softmax = nn.Softmax(dim=-1)
-        
-        
-    def forward(self, x):
-        # b, n, c --> [N, 128]
-        Q = self.q_conv(x).permuta(0,2,1)
-        
-        # b, c, n --> [128, N]
-        K = self.k_conv
-        
-        # b, c, n
-        V = self.v_conv 
-        
-        # matmul --> b, n, n
-        similarity = torch.bmm(Q, K)
-        
-        attention = self.softmax(similarity)
-        attention = attention / (1e-9 + attention.sum(dim=1, keepdim=True))
-        
-        # b, c, n 
-        R = torch.bmm(V, attention)
-        
-        # offset atention 
-        R = self.act(self.after_norm(self.trans_conv(x - R)))
-        
-        x = x + R
-        return x 
         
 class Local_op(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -96,7 +58,7 @@ class Local_op(nn.Module):
     
 class PCT(nn.Module):
     def __init__(self, args, output_channels=40):
-        super(Pct, self).__init__()
+        super(PCT, self).__init__()
         self.args = args
         self.conv1 = nn.Conv1d(3, 64, kernel_size=1, bias=False)
         self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
@@ -121,7 +83,7 @@ class PCT(nn.Module):
         self.linear3 = nn.Linear(256, output_channels)
         
     def forward(self, x):
-        xyz = x.permuta(0,2,1)
+        xyz = x.permute(0,2,1)
         
         batch_size, _, _ = x.size()
         
@@ -130,9 +92,11 @@ class PCT(nn.Module):
         # B, D, N
         x = F.relu(self.bn2(self.conv2(x)))
         x = x.permute(0, 2, 1)
+        xyz = xyz.contiguous()
         new_xyz, new_feature = sample_and_group(npoint=512, radius=0.15, nsample=32, xyz=xyz, points=x)         
         feature_0 = self.gather_local_0(new_feature)
         feature = feature_0.permute(0, 2, 1)
+        
         new_xyz, new_feature = sample_and_group(npoint=256, radius=0.2, nsample=32, xyz=new_xyz, points=feature) 
         feature_1 = self.gather_local_1(new_feature)
         
@@ -149,4 +113,41 @@ class PCT(nn.Module):
         return x
         
         
+class Self_Attention_Layer(nn.Module):
+    def __init__(self, channels):
+        super(Self_Attention_Layer, self).__init__()
+        self.q_conv = nn.Conv1d(channels, channels //4, 1, bias = False)
+        self.k_conv = nn.Conv1d(channels, channels //4, 1, bias = False)
+        self.q_conv.weight = self.q_conv.weight
+        self.k_conv.bias = self.k_conv.bias
+        self.v_conv = nn.Conv1d(channels, channels, 1)
+        self.trans_conv = nn.Conv1d(channels, channels, 1)
+        self.after_norm = nn.BatchNorm1d(channels)
+        self.act = nn.ReLU()
+        self.softmax = nn.Softmax(dim=-1)
         
+        
+    def forward(self, x):
+        # b, n, c --> [N, 128]
+        Q = self.q_conv(x).permute(0,2,1)
+        
+        # b, c, n --> [128, N]
+        K = self.k_conv(x)
+        
+        # b, c, n
+        V = self.v_conv(x)
+        
+        # matmul --> b, n, n
+        similarity = torch.bmm(Q, K)
+        
+        attention = self.softmax(similarity)
+        attention = attention / (1e-9 + attention.sum(dim=1, keepdim=True))
+        
+        # b, c, n 
+        R = torch.bmm(V, attention)
+        
+        # offset atention 
+        R = self.act(self.after_norm(self.trans_conv(x - R)))
+        
+        x = x + R
+        return x 

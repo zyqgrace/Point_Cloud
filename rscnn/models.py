@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import pytorch_utils as pt_utils
-from PCT_Pytorch.pointnet2_ops_lib.pointnet2_ops.pointnet2_modules import PointnetSAModule, PointnetSAModuleMSG
+from pointnet2_ops.pointnet2_modules import PointnetSAModule, PointnetSAModuleMSG
 import numpy as np
 
 # Relation-Shape CNN: Single-Scale Neighborhood

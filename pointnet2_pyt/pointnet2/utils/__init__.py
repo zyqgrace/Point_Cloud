@@ -12,4 +12,3 @@ from __future__ import (
     print_function,
     unicode_literals,
 )
-from PCT_Pytorch.pointnet2_ops_lib.pointnet2_ops import pointnet2_utils

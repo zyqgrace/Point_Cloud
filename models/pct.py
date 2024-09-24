@@ -2,7 +2,7 @@ import torch.nn as nn
 from PCT.model import PCT as Pct_original
 from all_utils import DATASET_NUM_CLASS
 
-class Pct(nn.Module):
+class PCT(nn.Module):
 
     def __init__(self, task, dataset):
         super().__init__()

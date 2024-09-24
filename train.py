@@ -434,6 +434,10 @@ def get_model(cfg):
             task=cfg.EXP.TASK,
             dataset=cfg.EXP.DATASET,
             **cfg.MODEL.RSCNN)
+    elif cfg.EXP.MODEL_NAME == 'pct':
+        model = models.PCT(
+            task=cfg.EXP.TASK,
+            dataset=cfg.EXP.DATASET)
     else:
         assert False
 

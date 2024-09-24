@@ -5,7 +5,7 @@ from pointnet2_tf.modelnet_h5_dataset import ModelNetH5Dataset as pointnet2_Mode
 from torchvision import transforms
 from dgcnn.pytorch.data import ModelNet40 as dgcnn_ModelNet40
 import os
-import PCT_Pytorch.pointnet2_ops_lib.pointnet2_ops.pointnet2_utils as pointnet2_utils
+import pointnet2_ops as pointnet2_utils
 import rscnn.data_utils as rscnn_d_utils
 from rscnn.ModelNet40Loader import ModelNet40Cls as rscnn_ModelNet40Cls
 
