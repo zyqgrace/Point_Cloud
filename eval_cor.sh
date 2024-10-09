@@ -10,7 +10,7 @@ if [ ! -d "output" ]; then
     mkdir "output"
 fi
 
-for model in 'pointnet2'; do # 'rscnn' 'pointnet2' 'dgcnn' 'curvenet'; do
+for model in 'pct'; do # 'rscnn' 'pointnet2' 'dgcnn' 'curvenet'; do
 for cor in 'uniform' 'gaussian' 'background' 'impulse' 'upsampling' 'distortion_rbf' 'distortion_rbf_inv' 'density' 'density_inc' 'shear' 'rotation' 'cutout' 'distortion'  'occlusion' 'lidar'; do
 
 for sev in 1 2 3 4 5; do
@@ -27,7 +27,7 @@ for sev in 1 2 3 4 5; do
 
 # done
 
-CUDA_VISIBLE_DEVICES=0 python test.py --model-path runs/pointnet2_${model}_run_1/model_best_test.pth --exp-config configs/corruption/${model}.yaml --severity ${sev} --corruption ${cor} --output ./output/${model}_none_${cor}_${sev}.txt
+CUDA_VISIBLE_DEVICES=0 python test.py --model-path runs/dgcnn_${model}_run_1/model_best_test.pth --exp-config configs/corruption/${model}.yaml --severity ${sev} --corruption ${cor} --output ./output/${model}_none_${cor}_${sev}.txt
 
 done
 done
