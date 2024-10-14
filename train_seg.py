@@ -9,12 +9,12 @@ from torch.utils.data import DataLoader
 # Import the dataset class and models
 from dataset import Dataset
 from pointnet_pyt.pointnet.model import PointNetDenseCls, feature_transform_regularizer  # Assuming pointnet.py contains your models
-
+from pointnet2_pyt.pointnet2.models import PointNet2PartSeg
 # Step 1: Hyperparameters
 batch_size = 32
 num_point = 2048
 learning_rate = 0.001
-num_epochs = 30
+num_epochs = 3
 num_classes = 50  # For ShapeNetPart
 
 # Step 2: Define the dataset paths
@@ -27,8 +27,15 @@ test_dataset = Dataset(root=root_dir, dataset_name='shapenetpart', num_points=20
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-# Step 2: Initialize the model, loss function, and optimizer
-model = PointNetDenseCls(k=50, feature_transform=True)  # k is the number of classes (50 for ShapeNetPart)
+# Step 2: Initialize the model, loss function, and optimizer# Step 4: Define model selection
+model_name = 'pointnet'  # Options: 'pointnet', 'pointnet2'
+
+if model_name == 'pointnet':
+    model = PointNetDenseCls(k=num_classes, feature_transform=True)
+elif model_name == 'pointnet2':
+    model = PointNet2PartSeg(num_class=num_classes, normal_channel=False)
+
+
 model = model.cuda()
 
 # Step 5: Define optimizer and loss
@@ -44,7 +51,8 @@ def train_one_epoch(epoch):
     
     for i, (point_set, label, seg, name, file) in enumerate(train_loader):
         
-        point_set = point_set.permute(0, 2, 1)
+        if model_name == 'pointnet':
+            point_set = point_set.permute(0, 2, 1)
         
         point_set = point_set.cuda()
         
@@ -88,18 +96,29 @@ def test_model():
 
     with torch.no_grad():  # Disable gradient computation for inference
         for i, (point_set, label, seg, name, file) in enumerate(test_loader):
-            point_set = point_set.permute(0, 2, 1)  # Transpose to [batch_size, 3, num_points]
-            point_set = point_set.cuda()
-            seg = seg.cuda()
+            if model_name == 'pointnet':
+                point_set = point_set.permute(0, 2, 1)  # Transpose to [batch_size, 3, num_points]
+                point_set = point_set.cuda()
+                seg = seg.cuda()
 
-            # Forward pass
-            pred, _, _ = model(point_set)
+                # Forward pass
+                pred, _, _ = model(point_set)
 
-            pred_choice = pred.data.max(2)[1]  # Get predicted labels
-            correct = pred_choice.eq(seg.data).cpu().sum()
-            total_correct += correct.item()
-            total_seen += point_set.size(0) * point_set.size(2)
+                pred_choice = pred.data.max(2)[1]  # Get predicted labels
+                correct = pred_choice.eq(seg.data).cpu().sum()
+                total_correct += correct.item()
+                total_seen += point_set.size(0) * point_set.size(2)
+            else:
+                point_set = point_set.cuda()
+                seg = seg.cuda()
 
+                # Forward pass
+                pred, _, _ = model(point_set)
+
+                pred_choice = pred.data.max(2)[1]  # Get predicted labels
+                correct = pred_choice.eq(seg.data).cpu().sum()
+                total_correct += correct.item()
+                total_seen += seg.numel()
     print(f"Test Accuracy: {total_correct / total_seen:.4f}")
     
 # Call test_model() after training to evaluate
