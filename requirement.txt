@@ -1,1 +1,0 @@
-git+https://github.com/imankgoyal/etw_pytorch_utils.git@v1.1.1#egg=etw_pytorch_utils
