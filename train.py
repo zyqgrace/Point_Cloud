@@ -18,6 +18,7 @@ from configs import get_cfg_defaults
 from pointnet_pyt.pointnet.model import feature_transform_regularizer
 import random
 import models
+import aug_utils
 from third_party import bn_helper, tent_helper
 import importlib
 from all_utils import (
@@ -70,9 +71,10 @@ def train(task, loader, model, optimizer, loss_name, dataset_name, cfg):
     time_backward = 0
     time_data_loading = 0
     time3  = time()
+    print("current augumentation applied: ",cfg.AUG.NAME)
     for i, data_batch in enumerate(loader):
         time1 = time()
-
+        print("current augumentation applied: ",cfg.AUG.NAME)
         if cfg.AUG.NAME == 'cutmix_r':
             data_batch = aug_utils.cutmix_r(data_batch,cfg)
         elif cfg.AUG.NAME == 'cutmix_k':

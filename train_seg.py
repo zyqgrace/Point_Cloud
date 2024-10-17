@@ -14,7 +14,7 @@ from pointnet2_pyt.pointnet2.models import PointNet2PartSeg
 batch_size = 32
 num_point = 2048
 learning_rate = 0.001
-num_epochs = 3
+num_epochs = 100
 num_classes = 50  # For ShapeNetPart
 
 # Step 2: Define the dataset paths

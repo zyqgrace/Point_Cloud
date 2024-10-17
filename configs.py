@@ -91,7 +91,7 @@ _C.MODEL.RSCNN.ssn_or_msn = True
 # -----------------------------------------------------------------------------
 _C.MODEL.PN2 = CN()
 _C.AUG = CN()
-_C.AUG.NAME = 'none'
+_C.AUG.NAME = 'mixup'
 _C.AUG.BETA = 1.
 _C.AUG.PROB = 0.5
 _C.AUG.MIXUPRATE = 0.4
