@@ -3,12 +3,12 @@ DATALOADER:
   num_workers: 0
 EXP:
   DATASET: modelnet40_dgcnn
-  EXP_ID: dgcnn_pct_run_1
+  EXP_ID: dgcnn_pct_run_cutmixr
   LOSS_NAME: smooth
   MODEL_NAME: pct
   SEED: 1
   TASK: cls
   OPTIMIZER: pct
 TRAIN:
-  l2: 1e-3
-  learning_rate: 0.001
+  l2: 1e-4
+  learning_rate: 0.0001

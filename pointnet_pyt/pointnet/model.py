@@ -134,7 +134,7 @@ class PointNetCls(nn.Module):
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, k)
-        self.dropout = nn.Dropout(p=0.3)
+        self.dropout = nn.Dropout(p=0.7)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
         self.relu = nn.ReLU()
@@ -163,6 +163,7 @@ class PointNetDenseCls(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
+        print("shape x", x.shape)
         n_pts = x.size()[2]
         x, trans, trans_feat = self.feat(x)
         x = F.relu(self.bn1(self.conv1(x)))
@@ -172,6 +173,7 @@ class PointNetDenseCls(nn.Module):
         x = x.transpose(2,1).contiguous()
         x = F.log_softmax(x.view(-1,self.k), dim=-1)
         x = x.view(batchsize, n_pts, self.k)
+        print("x.shape",x.shape)
         return x, trans, trans_feat
 
 def feature_transform_regularizer(trans):

@@ -8,7 +8,11 @@ import os
 import pointnet2_ops as pointnet2_utils
 import rscnn.data_utils as rscnn_d_utils
 from rscnn.ModelNet40Loader import ModelNet40Cls as rscnn_ModelNet40Cls
-
+from pointnet2_ops.pointnet2_utils import (
+    furthest_point_sample,
+    ball_query,
+    gather_operation
+)
 
 def load_data(data_path,corruption,severity):
 
@@ -169,17 +173,17 @@ class ModelNet40Rscnn(Dataset):
         point = data_batch['pc'].to(device)
         if self.split == "train":
             # (B, npoint)
-            fps_idx = pointnet2_utils.furthest_point_sample(point, 1200)
+            fps_idx = furthest_point_sample(point, 1200)
             fps_idx = fps_idx[:, np.random.choice(1200, self.num_points,
                                                   False)]
-            point = pointnet2_utils.gather_operation(
+            point = gather_operation(
                 point.transpose(1, 2).contiguous(),
                 fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
             point.data = self.PointcloudScaleAndTranslate(point.data)
         else:
-            fps_idx = pointnet2_utils.furthest_point_sample(
+            fps_idx = furthest_point_sample(
                 point, self.num_points)  # (B, npoint)
-            point = pointnet2_utils.gather_operation(
+            point = gather_operation(
                 point.transpose(1, 2).contiguous(),
                 fps_idx).transpose(1, 2).contiguous()
         # to maintain compatibility

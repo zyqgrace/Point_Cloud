@@ -27,14 +27,13 @@ from all_utils import (
     TensorboardManager, PerfTrackTrain,
     PerfTrackVal, TrackTrain, smooth_loss, DATASET_NUM_CLASS)
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = BASE_DIR
 sys.path.append(os.path.join(ROOT_DIR, 'models'))
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-AUGMENTED_DATA_DIR = "/home/yangqing/Documents/My_PointCloud_Model/data/modelnet_mixup_2"
+AUGMENTED_DATA_DIR = "/home/yangqing/Documents/My_PointCloud_Model/data/modelnet_cutmix_r_2"
 
 class AugmentedDataset(Dataset):
     def __init__(self, data_dir,batch_proc=None):
@@ -108,18 +107,6 @@ def train(task, loader, model, optimizer, loss_name, dataset_name, cfg):
     print("current augumentation applied: ",cfg.AUG.NAME)
     for i, data_batch in enumerate(loader):
         time1 = time()
-        # print("current augumentation applied: ",cfg.AUG.NAME)
-        if cfg.AUG.NAME == 'cutmix_r':
-            data_batch = aug_utils.cutmix_r(data_batch,cfg)
-        elif cfg.AUG.NAME == 'cutmix_k':
-            data_batch = aug_utils.cutmix_k(data_batch,cfg)
-        elif cfg.AUG.NAME == 'mixup':
-            data_batch = aug_utils.mixup(data_batch,cfg)
-        elif cfg.AUG.NAME == 'rsmix':
-            data_batch = aug_utils.rsmix(data_batch,cfg)
-        elif cfg.AUG.NAME == 'pgd':
-            data_batch = aug_utils.pgd(data_batch,model, task, loss_name, dataset_name)
-            model.train()
         # print(data_batch)
         inp = get_inp(task, model, data_batch, loader.dataset.batch_proc, dataset_name)
         out = model(**inp)

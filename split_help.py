@@ -2,9 +2,9 @@ import os
 import torch
 
 # Path to the folder containing the original .pt files with batched data
-source_dir = "/home/yangqing/Documents/My_PointCloud_Model/data/modelnet_mixup"
+source_dir = "/home/yangqing/Documents/My_PointCloud_Model/data/modelnet_cutmix_r"
 # Path to the folder where you want to save the individual .pt files
-destination_dir = "/home/yangqing/Documents/My_PointCloud_Model/data/modelnet_mixup_2"
+destination_dir = "/home/yangqing/Documents/My_PointCloud_Model/data/modelnet_cutmix_r_2"
 
 # Create the destination folder if it doesn't exist
 os.makedirs(destination_dir, exist_ok=True)

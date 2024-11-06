@@ -44,7 +44,7 @@ def adapt_bn(data,model,cfg):
     model = bn_helper.configure_model(model,eps=1e-5, momentum=0.1,reset_stats=False,no_stats=False)
     for _ in range(cfg.ITER):
         model(**data) 
-    print("Adaptation Done ...")
+    print("HERE HERE HERE Adaptation Done ...")
     model.eval()
     return model
 
@@ -74,7 +74,6 @@ def train(task, loader, model, optimizer, loss_name, dataset_name, cfg):
     print("current augumentation applied: ",cfg.AUG.NAME)
     for i, data_batch in enumerate(loader):
         time1 = time()
-        print("current augumentation applied: ",cfg.AUG.NAME)
         if cfg.AUG.NAME == 'cutmix_r':
             data_batch = aug_utils.cutmix_r(data_batch,cfg)
         elif cfg.AUG.NAME == 'cutmix_k':
@@ -499,57 +498,62 @@ def entry_train(cfg, resume=False, model_path=""):
     tb = TensorboardManager(log_dir)
     track_train = TrackTrain(early_stop_patience=cfg.TRAIN.early_stop)
  
-    for epoch in range(cfg.TRAIN.num_epochs):
-        print(f'Epoch {epoch}')
+    loss_file_path = os.path.join(log_dir, "loss.txt")
+    with open(loss_file_path, "w") as loss_file:
+        for epoch in range(cfg.TRAIN.num_epochs):
+            print(f'Epoch {epoch}')
 
-        print('Training..')
-        train_perf, train_loss = train(cfg.EXP.TASK, loader_train, model, optimizer, cfg.EXP.LOSS_NAME, cfg.EXP.DATASET, cfg)
-        pprint.pprint(train_perf, width=80)
-        tb.update('train', epoch, train_perf)
+            print('Training..')
+            train_perf, train_loss = train(cfg.EXP.TASK, loader_train, model, optimizer, cfg.EXP.LOSS_NAME, cfg.EXP.DATASET, cfg)
+            pprint.pprint(train_perf, width=80)
+            tb.update('train', epoch, train_perf)
 
-        if (not cfg.EXP_EXTRA.no_val) and epoch % cfg.EXP_EXTRA.val_eval_freq == 0:
-                print('\nValidating..')
-                val_perf = validate(cfg.EXP.TASK, loader_valid, model, cfg.EXP.DATASET, cfg.ADAPT)
-                pprint.pprint(val_perf, width=80)
-                tb.update('val', epoch, val_perf)
-        else:
-            val_perf = defaultdict(float)
-
-        if (not cfg.EXP_EXTRA.no_test) and (epoch % cfg.EXP_EXTRA.test_eval_freq == 0):
-            print('\nTesting..')
-            test_perf = validate(cfg.EXP.TASK, loader_test, model, cfg.EXP.DATASET, cfg.ADAPT)
-            pprint.pprint(test_perf, width=80)
-            tb.update('test', epoch, test_perf)
-        else:
-            test_perf = defaultdict(float)
-
-        track_train.record_epoch(
-            epoch_id=epoch,
-            train_metric=get_metric_from_perf(cfg.EXP.TASK, train_perf, cfg.EXP.METRIC),
-            val_metric=get_metric_from_perf(cfg.EXP.TASK, val_perf, cfg.EXP.METRIC),
-            test_metric=get_metric_from_perf(cfg.EXP.TASK, test_perf, cfg.EXP.METRIC))
-
-        if (not cfg.EXP_EXTRA.no_val) and track_train.save_model(epoch_id=epoch, split='val'):
-            print('Saving best model on the validation set')
-            save_checkpoint('best_val', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
-
-        if (not cfg.EXP_EXTRA.no_test) and track_train.save_model(epoch_id=epoch, split='test'):
-            print('Saving best model on the test set')
-            save_checkpoint('best_test', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
-
-        if (not cfg.EXP_EXTRA.no_val) and track_train.early_stop(epoch_id=epoch):
-            print(f"Early stopping at {epoch} as val acc did not improve for {cfg.TRAIN.early_stop} epochs.")
-            break
-
-        if (not (cfg.EXP_EXTRA.save_ckp == 0)) and (epoch % cfg.EXP_EXTRA.save_ckp == 0):
-            save_checkpoint(f'{epoch}', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
-
-        if cfg.EXP.OPTIMIZER == 'vanilla':
-            assert bnm_sched is None
-            lr_sched.step(train_loss)
-        else:
-            lr_sched.step()
+            # Write the training loss for the epoch to the file
+            loss_file.write(f"Epoch {epoch}: Train Loss = {train_loss}\n")
             
+            if (not cfg.EXP_EXTRA.no_val) and epoch % cfg.EXP_EXTRA.val_eval_freq == 0:
+                    print('\nValidating..')
+                    val_perf = validate(cfg.EXP.TASK, loader_valid, model, cfg.EXP.DATASET, cfg.ADAPT)
+                    pprint.pprint(val_perf, width=80)
+                    tb.update('val', epoch, val_perf)
+            else:
+                val_perf = defaultdict(float)
+
+            if (not cfg.EXP_EXTRA.no_test) and (epoch % cfg.EXP_EXTRA.test_eval_freq == 0):
+                print('\nTesting..')
+                test_perf = validate(cfg.EXP.TASK, loader_test, model, cfg.EXP.DATASET, cfg.ADAPT)
+                pprint.pprint(test_perf, width=80)
+                tb.update('test', epoch, test_perf)
+            else:
+                test_perf = defaultdict(float)
+
+            track_train.record_epoch(
+                epoch_id=epoch,
+                train_metric=get_metric_from_perf(cfg.EXP.TASK, train_perf, cfg.EXP.METRIC),
+                val_metric=get_metric_from_perf(cfg.EXP.TASK, val_perf, cfg.EXP.METRIC),
+                test_metric=get_metric_from_perf(cfg.EXP.TASK, test_perf, cfg.EXP.METRIC))
+
+            if (not cfg.EXP_EXTRA.no_val) and track_train.save_model(epoch_id=epoch, split='val'):
+                print('Saving best model on the validation set')
+                save_checkpoint('best_val', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
+
+            if (not cfg.EXP_EXTRA.no_test) and track_train.save_model(epoch_id=epoch, split='test'):
+                print('Saving best model on the test set')
+                save_checkpoint('best_test', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
+
+            if (not cfg.EXP_EXTRA.no_val) and track_train.early_stop(epoch_id=epoch):
+                print(f"Early stopping at {epoch} as val acc did not improve for {cfg.TRAIN.early_stop} epochs.")
+                break
+
+            if (not (cfg.EXP_EXTRA.save_ckp == 0)) and (epoch % cfg.EXP_EXTRA.save_ckp == 0):
+                save_checkpoint(f'{epoch}', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
+
+            if cfg.EXP.OPTIMIZER == 'vanilla':
+                assert bnm_sched is None
+                lr_sched.step(train_loss)
+            else:
+                lr_sched.step()
+                
     print('Saving the final model')
     save_checkpoint('final', epoch, model, optimizer,  lr_sched, bnm_sched, test_perf, cfg)
 

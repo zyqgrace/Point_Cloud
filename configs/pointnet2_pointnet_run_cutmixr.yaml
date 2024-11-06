@@ -3,11 +3,11 @@ DATALOADER:
   num_workers: 0
 EXP:
   DATASET: modelnet40_pn2
-  EXP_ID: pointnet2_pointnet_run_1
+  EXP_ID: pointnet2_pointnet_run_cutmixr
   LOSS_NAME: cross_entropy
   MODEL_NAME: pointnet
   SEED: 1
   TASK: cls_trans
 TRAIN:
   l2: 0.0
-  learning_rate: 0.001
+   learning_rate: 0.001
